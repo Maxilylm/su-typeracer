@@ -4,3 +4,4 @@ dist
 .status
 .attempts
 .env.example
+.vercel
