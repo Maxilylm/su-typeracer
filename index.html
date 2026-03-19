@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TypeRacer - Typing Speed Test</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%E2%8C%A8</text></svg>" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0f;
+      --bg-card: #12121a;
+      --bg-hover: #1a1a25;
+      --border: #2a2a3a;
+      --text: #e0e0e8;
+      --text-dim: #6a6a7a;
+      --green: #4ade80;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --blue: #60a5fa;
+      --purple: #a78bfa;
+      --cursor: #fbbf24;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      max-width: 1000px;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .logo span { color: var(--yellow); }
+
+    .mode-selector {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .mode-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 0.4rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .mode-btn:hover { border-color: var(--text-dim); color: var(--text); }
+    .mode-btn.active {
+      border-color: var(--yellow);
+      color: var(--yellow);
+      background: rgba(251, 191, 36, 0.08);
+    }
+
+    main {
+      flex: 1;
+      width: 100%;
+      max-width: 1000px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.5rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .stat-value.wpm { color: var(--yellow); font-size: 3.5rem; }
+    .stat-value.accuracy { color: var(--green); }
+    .stat-value.time { color: var(--blue); }
+    .stat-value.errors { color: var(--red); }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 0.3rem;
+    }
+
+    /* Passage display */
+    .passage-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+      position: relative;
+      min-height: 180px;
+    }
+
+    .passage {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.25rem;
+      line-height: 2;
+      letter-spacing: 0.5px;
+      user-select: none;
+    }
+
+    .passage .char {
+      position: relative;
+      transition: color 0.05s;
+    }
+    .passage .char.correct { color: var(--green); }
+    .passage .char.incorrect {
+      color: var(--red);
+      text-decoration: underline;
+      text-decoration-color: var(--red);
+    }
+    .passage .char.current {
+      border-left: 2px solid var(--cursor);
+      animation: blink 1s step-end infinite;
+      margin-left: -1px;
+      padding-left: 1px;
+    }
+    .passage .char.upcoming { color: var(--text-dim); }
+
+    @keyframes blink {
+      50% { border-color: transparent; }
+    }
+
+    /* Hidden input for capturing keystrokes */
+    .hidden-input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    /* Instructions */
+    .instructions {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .instructions kbd {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1rem 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+    }
+
+    /* Action buttons */
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.6rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .btn:hover { border-color: var(--yellow); color: var(--yellow); }
+    .btn.primary {
+      background: var(--yellow);
+      color: var(--bg);
+      border-color: var(--yellow);
+      font-weight: 600;
+    }
+    .btn.primary:hover { opacity: 0.9; }
+
+    /* Results screen */
+    .results-screen {
+      display: none;
+      width: 100%;
+      text-align: center;
+    }
+    .results-screen.visible { display: block; }
+
+    .results-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .result-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem;
+    }
+    .result-card .stat-value { font-size: 2rem; }
+
+    /* Keyboard heatmap */
+    .heatmap-section {
+      margin-top: 2rem;
+      width: 100%;
+    }
+
+    .heatmap-title {
+      font-size: 1rem;
+      color: var(--text-dim);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .keyboard {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .kb-row {
+      display: flex;
+      gap: 4px;
+    }
+
+    .key {
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-dim);
+      transition: all 0.2s;
+    }
+    .key.space { width: 240px; }
+    .key.wide { width: 66px; }
+    .key.wider { width: 88px; }
+
+    /* History */
+    .history-section {
+      width: 100%;
+      margin-top: 2rem;
+    }
+
+    .history-title {
+      font-size: 1rem;
+      color: var(--text-dim);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .history-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.8rem 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+    }
+
+    .history-item .hi-wpm {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: var(--yellow);
+      font-size: 1.1rem;
+    }
+    .history-item .hi-acc { color: var(--green); }
+    .history-item .hi-time { color: var(--blue); }
+    .history-item .hi-date { color: var(--text-dim); }
+
+    .clear-btn {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 0.75rem;
+      text-decoration: underline;
+    }
+    .clear-btn:hover { color: var(--red); }
+
+    /* Progress bar */
+    .progress-bar {
+      width: 100%;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--yellow);
+      border-radius: 2px;
+      transition: width 0.1s;
+      width: 0%;
+    }
+
+    @media (max-width: 600px) {
+      .passage { font-size: 1rem; line-height: 1.8; }
+      .stat-value.wpm { font-size: 2.5rem; }
+      .stats-bar { gap: 1rem; }
+      .key { width: 28px; height: 32px; font-size: 0.6rem; }
+      .key.space { width: 140px; }
+      .key.wide { width: 42px; }
+      .key.wider { width: 56px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Type<span>Racer</span></div>
+    <div class="mode-selector">
+      <button class="mode-btn active" data-time="30">30s</button>
+      <button class="mode-btn" data-time="60">60s</button>
+      <button class="mode-btn" data-time="120">2m</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="stats-bar">
+      <div class="stat">
+        <div class="stat-value wpm" id="wpm-display">0</div>
+        <div class="stat-label">WPM</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value accuracy" id="acc-display">100%</div>
+        <div class="stat-label">Accuracy</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value time" id="time-display">30</div>
+        <div class="stat-label">Seconds</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value errors" id="err-display">0</div>
+        <div class="stat-label">Errors</div>
+      </div>
+    </div>
+
+    <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+    <div class="passage-container" id="passage-container">
+      <div class="passage" id="passage"></div>
+      <input class="hidden-input" id="input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+    </div>
+
+    <p class="instructions" id="instructions">Click the text or press any key to start typing. <kbd>Tab</kbd> to restart. <kbd>Esc</kbd> for new passage.</p>
+
+    <div class="actions">
+      <button class="btn" id="new-btn">New Passage</button>
+      <button class="btn primary" id="restart-btn">Restart</button>
+    </div>
+
+    <!-- Results screen (hidden until test ends) -->
+    <div class="results-screen" id="results">
+      <div class="results-title">Results</div>
+      <div class="results-grid">
+        <div class="result-card">
+          <div class="stat-value wpm" id="r-wpm">0</div>
+          <div class="stat-label">WPM</div>
+        </div>
+        <div class="result-card">
+          <div class="stat-value accuracy" id="r-acc">100%</div>
+          <div class="stat-label">Accuracy</div>
+        </div>
+        <div class="result-card">
+          <div class="stat-value time" id="r-time">0s</div>
+          <div class="stat-label">Time</div>
+        </div>
+        <div class="result-card">
+          <div class="stat-value" id="r-chars" style="color:var(--purple)">0</div>
+          <div class="stat-label">Characters</div>
+        </div>
+        <div class="result-card">
+          <div class="stat-value errors" id="r-errors">0</div>
+          <div class="stat-label">Errors</div>
+        </div>
+      </div>
+
+      <div class="heatmap-section">
+        <div class="heatmap-title">Error Heatmap</div>
+        <div class="keyboard" id="keyboard"></div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="history-section" id="history-section">
+      <div class="history-title">
+        <span>Past Attempts</span>
+        <button class="clear-btn" id="clear-history">Clear</button>
+      </div>
+      <div class="history-list" id="history-list"></div>
+    </div>
+  </main>
+
+  <script type="module">
+    // ── Passages ──
+    const passages = [
+      "The best way to predict the future is to invent it. Alan Kay said this decades ago, and it remains the driving philosophy behind every great startup and every bold piece of software ever shipped.",
+      "Any sufficiently advanced technology is indistinguishable from magic. Arthur C. Clarke understood that innovation at its peak feels effortless, even though the work behind it is anything but.",
+      "First, solve the problem. Then, write the code. John Johnson's advice reminds us that typing faster matters less than thinking clearly about the problem at hand before opening an editor.",
+      "Code is like humor. When you have to explain it, it is bad. Good code communicates intent as clearly as a well-told joke, and refactoring is the punchline that makes everything click.",
+      "The function of good software is to make the complex appear to be simple. Grady Booch knew that real engineering elegance is found in simplicity, not in clever abstractions.",
+      "Programming is not about typing, it is about thinking. Rich Hickey has argued that the bottleneck in software development is never the keyboard but always the quality of our reasoning.",
+      "Simplicity is the soul of efficiency. Austin Freeman's words echo through every well-designed system, where removing the unnecessary reveals the essential logic underneath all the noise.",
+      "It is not enough to write code that works. We must write code that communicates. Robert C. Martin taught us that readability is a feature, and clarity is the ultimate optimization.",
+      "In the middle of difficulty lies opportunity. Einstein's observation applies perfectly to debugging. The hardest bugs often lead to the deepest understanding of a system's architecture.",
+      "Talk is cheap. Show me the code. Linus Torvalds famously cut through endless debates with this demand for tangible results. Actions and working prototypes always speak louder than words.",
+      "The only way to go fast is to go well. Rushing through code creates technical debt that slows you down later. Quality and speed are not opposites; they are partners.",
+      "Make it work, make it right, make it fast. Kent Beck's three rules of software development prioritize correctness over performance, but never forget that both matter in the end.",
+      "A language that does not affect the way you think about programming is not worth knowing. Alan Perlis challenged programmers to keep learning new paradigms and expanding their mental models.",
+      "The most dangerous phrase in the language is: we have always done it this way. Grace Hopper challenged assumptions throughout her legendary career, pioneering compiler design and modern programming.",
+      "Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away. Saint-Exupery's principle guides the best API and interface design.",
+      "The computer was born to solve problems that did not exist before. Bill Gates recognized the paradox of technology: each solution opens the door to new possibilities and new challenges.",
+      "Before software can be reusable, it first has to be usable. Ralph Johnson understood that the best abstractions emerge from concrete use cases, not from speculative generalization upfront.",
+      "Every great developer you know got there by solving problems they were unqualified to solve until they actually did it. Challenge yourself with hard problems and grow through struggle.",
+      "Measuring programming progress by lines of code is like measuring aircraft building progress by weight. Bill Gates offered this comparison to highlight that code volume means nothing without value.",
+      "The Internet is becoming the town square for the global village of tomorrow. As we build for the web, we shape the conversations and connections of billions of people worldwide.",
+      "Debugging is twice as hard as writing the code in the first place. Therefore, if you write the code as cleverly as possible, you are by definition not smart enough to debug it.",
+      "Software is a great combination of artistry and engineering. Bill Gates described the dual nature of programming: it requires both creative vision and rigorous analytical thinking to build great products.",
+      "The best error message is the one that never shows up. Thomas Fuchs reminded us that preventing errors through good design is always better than gracefully handling them after the fact.",
+      "Walking on water and developing software from a specification are easy if both are frozen. Edward Berard captured the fundamental challenge of building software in a world of changing requirements."
+    ];
+
+    // ── State ──
+    let currentPassage = "";
+    let charStates = [];
+    let cursorPos = 0;
+    let started = false;
+    let finished = false;
+    let startTime = null;
+    let timerInterval = null;
+    let selectedTime = 30;
+    let timeRemaining = 30;
+    let totalErrors = 0;
+    let errorMap = {};
+
+    // ── DOM refs ──
+    const passageEl = document.getElementById("passage");
+    const inputEl = document.getElementById("input");
+    const wpmDisplay = document.getElementById("wpm-display");
+    const accDisplay = document.getElementById("acc-display");
+    const timeDisplay = document.getElementById("time-display");
+    const errDisplay = document.getElementById("err-display");
+    const progressEl = document.getElementById("progress");
+    const resultsEl = document.getElementById("results");
+    const passageContainer = document.getElementById("passage-container");
+    const instructionsEl = document.getElementById("instructions");
+
+    // ── Keyboard layout for heatmap ──
+    const kbRows = [
+      ["`","1","2","3","4","5","6","7","8","9","0","-","="],
+      ["q","w","e","r","t","y","u","i","o","p","[","]","\\"],
+      ["a","s","d","f","g","h","j","k","l",";","'"],
+      ["z","x","c","v","b","n","m",",",".","/"],
+      [" "]
+    ];
+
+    // ── Init ──
+    function pickPassage() {
+      const idx = Math.floor(Math.random() * passages.length);
+      return passages[idx];
+    }
+
+    function initTest() {
+      currentPassage = pickPassage();
+      charStates = new Array(currentPassage.length).fill("upcoming");
+      cursorPos = 0;
+      started = false;
+      finished = false;
+      startTime = null;
+      timeRemaining = selectedTime;
+      totalErrors = 0;
+      errorMap = {};
+
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+
+      wpmDisplay.textContent = "0";
+      accDisplay.textContent = "100%";
+      timeDisplay.textContent = selectedTime;
+      errDisplay.textContent = "0";
+      progressEl.style.width = "0%";
+
+      resultsEl.classList.remove("visible");
+      passageContainer.style.display = "block";
+      instructionsEl.style.display = "block";
+
+      renderPassage();
+      inputEl.value = "";
+      inputEl.focus();
+    }
+
+    function renderPassage() {
+      let html = "";
+      for (let i = 0; i < currentPassage.length; i++) {
+        const ch = currentPassage[i] === " " ? "&nbsp;" : escapeHtml(currentPassage[i]);
+        let cls = charStates[i];
+        if (i === cursorPos && !finished) cls += " current";
+        html += `<span class="char ${cls}">${ch}</span>`;
+      }
+      passageEl.innerHTML = html;
+
+      // Auto-scroll: keep cursor visible
+      const currentEl = passageEl.querySelector(".current");
+      if (currentEl) {
+        const containerRect = passageContainer.getBoundingClientRect();
+        const charRect = currentEl.getBoundingClientRect();
+        if (charRect.bottom > containerRect.bottom - 20 || charRect.top < containerRect.top + 20) {
+          currentEl.scrollIntoView({ block: "center", behavior: "smooth" });
+        }
+      }
+    }
+
+    function escapeHtml(c) {
+      const map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+      return map[c] || c;
+    }
+
+    // ── Typing logic ──
+    function handleInput(e) {
+      if (finished) return;
+
+      // Tab = restart
+      if (e.key === "Tab") {
+        e.preventDefault();
+        initTest();
+        return;
+      }
+      // Escape = new passage
+      if (e.key === "Escape") {
+        e.preventDefault();
+        initTest();
+        return;
+      }
+
+      // Ignore modifier-only keys
+      if (["Shift","Control","Alt","Meta","CapsLock","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Home","End","PageUp","PageDown","Insert","Delete","F1","F2","F3","F4","F5","F6","F7","F8","F9","F10","F11","F12"].includes(e.key)) return;
+
+      if (!started) {
+        started = true;
+        startTime = Date.now();
+        startTimer();
+      }
+
+      if (e.key === "Backspace") {
+        e.preventDefault();
+        if (cursorPos > 0) {
+          cursorPos--;
+          charStates[cursorPos] = "upcoming";
+        }
+        renderPassage();
+        updateStats();
+        return;
+      }
+
+      if (cursorPos >= currentPassage.length) return;
+
+      const expected = currentPassage[cursorPos];
+      const typed = e.key;
+
+      // Only accept single printable characters
+      if (typed.length !== 1) return;
+
+      e.preventDefault();
+
+      if (typed === expected) {
+        charStates[cursorPos] = "correct";
+      } else {
+        charStates[cursorPos] = "incorrect";
+        totalErrors++;
+        const lower = expected.toLowerCase();
+        errorMap[lower] = (errorMap[lower] || 0) + 1;
+      }
+
+      cursorPos++;
+      renderPassage();
+      updateStats();
+
+      // Progress
+      const pct = (cursorPos / currentPassage.length) * 100;
+      progressEl.style.width = pct + "%";
+
+      // Check if finished
+      if (cursorPos >= currentPassage.length) {
+        endTest();
+      }
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        timeRemaining = Math.max(0, selectedTime - Math.floor(elapsed));
+        timeDisplay.textContent = timeRemaining;
+        updateStats();
+
+        if (timeRemaining <= 0) {
+          endTest();
+        }
+      }, 200);
+    }
+
+    function updateStats() {
+      if (!started || !startTime) return;
+
+      const elapsed = (Date.now() - startTime) / 1000;
+      const minutes = elapsed / 60;
+
+      // WPM = (chars typed / 5) / minutes
+      const correctChars = charStates.filter(s => s === "correct").length;
+      const wpm = minutes > 0 ? Math.round((correctChars / 5) / minutes) : 0;
+      wpmDisplay.textContent = wpm;
+
+      // Accuracy
+      const attempted = charStates.filter(s => s === "correct" || s === "incorrect").length;
+      const acc = attempted > 0 ? Math.round((correctChars / attempted) * 100) : 100;
+      accDisplay.textContent = acc + "%";
+
+      errDisplay.textContent = totalErrors;
+    }
+
+    function endTest() {
+      finished = true;
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+
+      const elapsed = (Date.now() - startTime) / 1000;
+      const minutes = elapsed / 60;
+      const correctChars = charStates.filter(s => s === "correct").length;
+      const attempted = charStates.filter(s => s !== "upcoming").length;
+      const wpm = minutes > 0 ? Math.round((correctChars / 5) / minutes) : 0;
+      const acc = attempted > 0 ? Math.round((correctChars / attempted) * 100) : 100;
+
+      // Fill results
+      document.getElementById("r-wpm").textContent = wpm;
+      document.getElementById("r-acc").textContent = acc + "%";
+      document.getElementById("r-time").textContent = Math.round(elapsed) + "s";
+      document.getElementById("r-chars").textContent = attempted;
+      document.getElementById("r-errors").textContent = totalErrors;
+
+      resultsEl.classList.add("visible");
+      renderPassage();
+      renderHeatmap();
+      saveHistory(wpm, acc, Math.round(elapsed), attempted, totalErrors);
+      renderHistory();
+    }
+
+    // ── Keyboard Heatmap ──
+    function renderHeatmap() {
+      const kbEl = document.getElementById("keyboard");
+      kbEl.innerHTML = "";
+
+      const maxErr = Math.max(1, ...Object.values(errorMap));
+
+      for (const row of kbRows) {
+        const rowEl = document.createElement("div");
+        rowEl.className = "kb-row";
+
+        for (const key of row) {
+          const keyEl = document.createElement("div");
+          let cls = "key";
+          if (key === " ") cls += " space";
+          keyEl.className = cls;
+          keyEl.textContent = key === " " ? "space" : key;
+
+          const errs = errorMap[key.toLowerCase()] || 0;
+          if (errs > 0) {
+            const intensity = Math.min(errs / maxErr, 1);
+            const r = Math.round(248 * intensity);
+            const g = Math.round(113 * intensity * 0.3);
+            const b = Math.round(113 * intensity * 0.3);
+            keyEl.style.background = `rgba(${r}, ${g}, ${b}, ${0.3 + intensity * 0.7})`;
+            keyEl.style.color = "#fff";
+            keyEl.style.borderColor = `rgba(248, 113, 113, ${intensity})`;
+            keyEl.title = `${errs} error${errs > 1 ? "s" : ""}`;
+          }
+
+          rowEl.appendChild(keyEl);
+        }
+        kbEl.appendChild(rowEl);
+      }
+    }
+
+    // ── History (localStorage) ──
+    function getHistory() {
+      try {
+        return JSON.parse(localStorage.getItem("typeracer_history") || "[]");
+      } catch { return []; }
+    }
+
+    function saveHistory(wpm, acc, time, chars, errors) {
+      const history = getHistory();
+      history.unshift({
+        wpm, acc, time, chars, errors,
+        mode: selectedTime + "s",
+        date: new Date().toISOString()
+      });
+      // Keep last 50
+      if (history.length > 50) history.length = 50;
+      localStorage.setItem("typeracer_history", JSON.stringify(history));
+    }
+
+    function renderHistory() {
+      const history = getHistory();
+      const listEl = document.getElementById("history-list");
+      const sectionEl = document.getElementById("history-section");
+
+      if (history.length === 0) {
+        sectionEl.style.display = "none";
+        return;
+      }
+      sectionEl.style.display = "block";
+
+      listEl.innerHTML = history.slice(0, 10).map(h => {
+        const d = new Date(h.date);
+        const dateStr = d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        return `
+          <div class="history-item">
+            <span class="hi-wpm">${h.wpm} WPM</span>
+            <span class="hi-acc">${h.acc}%</span>
+            <span class="hi-time">${h.time}s (${h.mode})</span>
+            <span class="hi-date">${dateStr}</span>
+          </div>`;
+      }).join("");
+    }
+
+    // ── Event listeners ──
+    document.addEventListener("keydown", (e) => {
+      // Focus input on any keydown
+      inputEl.focus();
+      handleInput(e);
+    });
+
+    passageContainer.addEventListener("click", () => inputEl.focus());
+
+    // Mode selector
+    document.querySelectorAll(".mode-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelector(".mode-btn.active").classList.remove("active");
+        btn.classList.add("active");
+        selectedTime = parseInt(btn.dataset.time);
+        initTest();
+      });
+    });
+
+    document.getElementById("restart-btn").addEventListener("click", () => initTest());
+    document.getElementById("new-btn").addEventListener("click", () => initTest());
+    document.getElementById("clear-history").addEventListener("click", () => {
+      localStorage.removeItem("typeracer_history");
+      renderHistory();
+    });
+
+    // ── Boot ──
+    initTest();
+    renderHistory();
+  </script>
+</body>
+</html>
