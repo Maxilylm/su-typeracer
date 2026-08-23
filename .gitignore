@@ -5,3 +5,8 @@ dist
 .attempts
 .env.example
 .vercel
+node_modules/
+dist/
+.next/
+.env.local
+.claude/
