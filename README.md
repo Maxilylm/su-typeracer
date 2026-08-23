@@ -2,7 +2,7 @@
 
 > A timed typing speed test that shows you which keys you actually keep getting wrong.
 
-**[Live demo](https://su-typeracer.vercel.app)**
+**[Live demo](https://typeracer-mlx.vercel.app)**
 
 Typing tests give you a WPM number and nothing actionable. TypeRacer runs the same 30-second, 60-second, or 2-minute drill over a rotating set of programming quotes, coloring each character green or red as you type it, but it also records every mistyped character and renders the tally as a heat-mapped QWERTY keyboard on the results screen — so the fix is a specific finger, not "practice more." Every completed run is written to `localStorage`, giving you a running log to compare against without an account.
 
@@ -31,4 +31,4 @@ npm run dev
 
 ---
 
-Part of a series of 90 small web apps. [Browse them all](https://su-slopmachine.vercel.app).
+Part of a series of 90 small web apps. [Browse them all](https://lorenzoylosada.vercel.app).
